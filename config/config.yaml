@@ -1,0 +1,383 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Production Configuration
+# =============================================================================
+# This is the central configuration file for the ML project. It is designed to
+# be environment-aware, reproducible, and modular. Sensitive values should be
+# injected via environment variables or a secrets manager, not committed here.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Global Project Settings
+# -----------------------------------------------------------------------------
+project:
+  # Human-readable project name used in logs, experiment tracking, and artifacts.
+  name: "Telco Customer Churn Prediction"
+
+  # Project version following semantic versioning (MAJOR.MINOR.PATCH).
+  version: "1.0.0"
+
+  # Description of the project objective.
+  description: "Production-grade machine learning system to predict telecom customer churn."
+
+  # Author or team responsible for the project.
+  author: "Richard Obeng"
+
+  # Active runtime environment. Override via ENVIRONMENT env variable.
+  # Supported values: development, testing, staging, production.
+  environment: "development"
+
+  # Timezone used for timestamps, logging, and scheduling.
+  timezone: "UTC"
+
+# -----------------------------------------------------------------------------
+# 2. Reproducibility Settings
+# -----------------------------------------------------------------------------
+reproducibility:
+  # Master random seed used across numpy, pandas, scikit-learn, XGBoost,
+  # LightGBM, and CatBoost. Keeping this fixed ensures reproducible results.
+  random_seed: 42
+
+  # Number of threads for deterministic operations. Set to 1 for fully
+  # reproducible results during experimentation; increase for training speed.
+  n_jobs: -1
+
+  # Whether to enforce deterministic behavior at the cost of performance.
+  # Recommended: true for experiments, false for production training.
+  deterministic: true
+
+# -----------------------------------------------------------------------------
+# 3. Paths and Artifact Locations
+# -----------------------------------------------------------------------------
+paths:
+  # Root directories for data artifacts.
+  data:
+    raw: "data/raw"                          # Downloaded raw archives
+    extracted: "data/raw/extracted"          # Extracted source files
+    processed: "data/processed"              # Cleaned and engineered datasets
+    splits: "data/processed/splits"          # Train/validation/test splits
+
+  # Directory for trained model artifacts and preprocessing pipelines.
+  models: "models"
+
+  # Directory for MLflow and experiment tracking artifacts.
+  artifacts: "artifacts"
+
+  # Directory for evaluation reports, plots, and SHAP explanations.
+  reports: "reports"
+
+  # Directory for logs.
+  logs: "logs"
+
+# -----------------------------------------------------------------------------
+# 4. Data Configuration
+# -----------------------------------------------------------------------------
+data:
+  # Source dataset configuration.
+  source:
+    name: "IBM Telco Customer Churn"
+    type: "csv"
+    file_name: "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+
+  # Train / validation / test split proportions. Must sum to 1.0.
+  split:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+    stratify: true          # Preserve class distribution across splits
+    shuffle: true
+
+  # Target variable configuration.
+  target:
+    name: "Churn"
+    positive_label: "Yes"
+    negative_label: "No"
+    encoding:
+      Yes: 1
+      No: 0
+
+  # Identifier column to drop before modeling.
+  id_column: "customerID"
+
+  # Columns to treat as categorical (declared explicitly for reproducibility).
+  categorical_columns:
+    - "gender"
+    - "SeniorCitizen"
+    - "Partner"
+    - "Dependents"
+    - "PhoneService"
+    - "MultipleLines"
+    - "InternetService"
+    - "OnlineSecurity"
+    - "OnlineBackup"
+    - "DeviceProtection"
+    - "TechSupport"
+    - "StreamingTV"
+    - "StreamingMovies"
+    - "Contract"
+    - "PaperlessBilling"
+    - "PaymentMethod"
+
+  # Columns to treat as numerical.
+  numerical_columns:
+    - "tenure"
+    - "MonthlyCharges"
+    - "TotalCharges"
+
+  # Missing value handling.
+  missing_values:
+    total_charges:
+      strategy: "derived"   # Fill with tenure * MonthlyCharges, or 0.0 if tenure == 0
+      fallback_value: 0.0
+
+# -----------------------------------------------------------------------------
+# 5. Feature Engineering Configuration
+# -----------------------------------------------------------------------------
+features:
+  # Whether to enable engineered feature generation.
+  enabled: true
+
+  # Derived features to create before modeling.
+  engineered:
+    - name: "avg_monthly_charge"
+      formula: "TotalCharges / tenure"
+      fallback: 0.0          # Applied when tenure == 0
+
+    - name: "tenure_group"
+      type: "bin"
+      bins: [0, 12, 24, 48, 60]
+      labels: ["0-12", "13-24", "25-48", "49-60", "61+"]
+
+    - name: "has_internet"
+      condition: "InternetService != 'No'"
+
+    - name: "has_phone"
+      condition: "PhoneService == 'Yes'"
+
+    - name: "num_addons"
+      columns:
+        - "OnlineSecurity"
+        - "OnlineBackup"
+        - "DeviceProtection"
+        - "TechSupport"
+      value_to_count: "Yes"
+
+    - name: "is_month_to_month"
+      condition: "Contract == 'Month-to-month'"
+
+    - name: "is_electronic_check"
+      condition: "PaymentMethod == 'Electronic check'"
+
+  # Feature scaling configuration for linear models.
+  scaling:
+    method: "standard"       # Options: standard, minmax, robust
+    target: "numerical"
+
+  # Categorical encoding strategy per model type.
+  encoding:
+    linear:
+      method: "onehot"
+      drop: "first"
+    tree:
+      method: "label"
+    catboost:
+      method: "native"       # CatBoost handles categoricals internally
+
+# -----------------------------------------------------------------------------
+# 6. Model Training Configuration
+# -----------------------------------------------------------------------------
+training:
+  # Primary evaluation metric used for model selection.
+  primary_metric: "auc_roc"
+
+  # Metrics to compute and log during training and evaluation.
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "auc_roc"
+    - "brier_score"
+
+  # Cross-validation configuration.
+  cross_validation:
+    method: "stratified_kfold"
+    n_splits: 5
+    shuffle: true
+
+  # Class imbalance handling.
+  class_imbalance:
+    strategy: "class_weight" # Options: class_weight, smote, threshold_tuning, none
+    threshold_tuning: true
+
+# -----------------------------------------------------------------------------
+# 7. Candidate Models and Hyperparameter Search
+# -----------------------------------------------------------------------------
+models:
+  # Compute device for training and inference.
+  # Options: cpu, cuda, mps (Apple Silicon).
+  device: "cpu"
+
+  # List of candidate models to train and compare.
+  candidates:
+    - name: "logistic_regression"
+      library: "scikit-learn"
+      enabled: true
+
+    - name: "random_forest"
+      library: "scikit-learn"
+      enabled: true
+
+    - name: "xgboost"
+      library: "xgboost"
+      enabled: true
+
+    - name: "lightgbm"
+      library: "lightgbm"
+      enabled: true
+
+    - name: "catboost"
+      library: "catboost"
+      enabled: true
+
+  # Hyperparameter tuning configuration.
+  hyperparameter_tuning:
+    method: "optuna"          # Options: grid, random, optuna, bayesian
+    n_trials: 100
+    early_stopping_rounds: 20
+    direction: "maximize"     # Maximize the primary metric
+    timeout_seconds: 3600
+
+# -----------------------------------------------------------------------------
+# 8. Experiment Tracking Configuration
+# -----------------------------------------------------------------------------
+experiment_tracking:
+  # Name of the MLflow experiment.
+  experiment_name: "telco_customer_churn"
+
+  # MLflow tracking server URI. Override via MLFLOW_TRACKING_URI env variable.
+  tracking_uri: "http://localhost:5000"
+
+  # Registry model name for staging and production promotion.
+  registered_model_name: "telco_churn_classifier"
+
+  # Artifact storage location. Use remote storage (S3, Azure Blob, GCS) in production.
+  artifact_location: "./mlruns"
+
+  # What to log after each training run.
+  logging:
+    metrics: true
+    parameters: true
+    artifacts: true
+    model: true
+    preprocessor: true
+    dataset_versions: true
+
+# -----------------------------------------------------------------------------
+# 9. Serving Configuration
+# -----------------------------------------------------------------------------
+serving:
+  # FastAPI service settings.
+  host: "0.0.0.0"
+  port: 8000
+  reload: false             # Never enable reload in production
+
+  # Model artifact path or MLflow model URI.
+  model_path: "models/churn_model"
+
+  # Decision threshold for binary classification.
+  threshold: 0.5
+
+  # Operational limits.
+  max_batch_size: 1000
+  request_timeout_seconds: 30
+
+  # Number of Uvicorn/Gunicorn workers. -1 means auto-detect based on CPU cores.
+  workers: -1
+
+# -----------------------------------------------------------------------------
+# 10. Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  # Log level. Override via LOG_LEVEL env variable.
+  level: "INFO"
+
+  # Format: json for production, text for local development.
+  format: "json"
+
+  # Whether to write logs to file in addition to stdout.
+  log_to_file: false
+
+  # Log rotation settings.
+  rotation:
+    max_bytes: 10485760       # 10 MB
+    backup_count: 5
+
+# -----------------------------------------------------------------------------
+# 11. Monitoring and Alerting
+# -----------------------------------------------------------------------------
+monitoring:
+  # Prometheus metrics endpoint.
+  prometheus:
+    enabled: true
+    endpoint: "/metrics"
+    multiproc_dir: "/tmp/prometheus"
+
+  # Service-level objective targets.
+  slo:
+    p95_latency_ms: 200
+    error_rate_threshold: 0.01
+    availability: 0.995
+
+  # Alerting thresholds.
+  alerts:
+    high_latency_ms: 300
+    high_error_rate: 0.01
+    model_load_failure: true
+
+# -----------------------------------------------------------------------------
+# 12. Environment-Specific Overrides (Optional)
+# -----------------------------------------------------------------------------
+# These sections are merged with the base config based on the active environment.
+# Values here take precedence over the base settings above.
+# -----------------------------------------------------------------------------
+
+development:
+  reproducibility:
+    deterministic: false
+  logging:
+    level: "DEBUG"
+    format: "text"
+  experiment_tracking:
+    tracking_uri: "http://localhost:5000"
+
+testing:
+  data:
+    split:
+      test: 0.30
+  models:
+    device: "cpu"
+  logging:
+    level: "INFO"
+    format: "text"
+
+staging:
+  serving:
+    workers: 2
+    reload: false
+  logging:
+    level: "INFO"
+    format: "json"
+
+production:
+  reproducibility:
+    deterministic: false
+  serving:
+    reload: false
+    workers: 4
+  logging:
+    level: "INFO"
+    format: "json"
+    log_to_file: true
+  experiment_tracking:
+    tracking_uri: "${MLFLOW_TRACKING_URI}"
+    artifact_location: "${MLFLOW_ARTIFACT_LOCATION}"
