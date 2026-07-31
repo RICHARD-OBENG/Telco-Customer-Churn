@@ -1,0 +1,457 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Model Configuration
+# =============================================================================
+# This file defines model training, evaluation, selection, and registry
+# settings. It separates algorithm configuration from runtime concerns and is
+# designed to be consumed by the training orchestration code.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Default Model
+# -----------------------------------------------------------------------------
+# The model used by default for training, inference, and registry.
+# Must match one of the keys under 'supported_algorithms'.
+default_model: "catboost"
+
+# -----------------------------------------------------------------------------
+# 2. Supported Algorithms
+# -----------------------------------------------------------------------------
+supported_algorithms:
+  logistic_regression:
+    library: "scikit-learn"
+    module: "sklearn.linear_model"
+    class: "LogisticRegression"
+    enabled: true
+    tags:
+      - "linear"
+      - "interpretable"
+      - "baseline"
+
+  random_forest:
+    library: "scikit-learn"
+    module: "sklearn.ensemble"
+    class: "RandomForestClassifier"
+    enabled: true
+    tags:
+      - "tree"
+      - "ensemble"
+      - "robust"
+
+  xgboost:
+    library: "xgboost"
+    module: "xgboost"
+    class: "XGBClassifier"
+    enabled: true
+    tags:
+      - "tree"
+      - "gradient_boosting"
+      - "high_performance"
+
+  lightgbm:
+    library: "lightgbm"
+    module: "lightgbm"
+    class: "LGBMClassifier"
+    enabled: true
+    tags:
+      - "tree"
+      - "gradient_boosting"
+      - "fast"
+
+  catboost:
+    library: "catboost"
+    module: "catboost"
+    class: "CatBoostClassifier"
+    enabled: true
+    tags:
+      - "tree"
+      - "gradient_boosting"
+      - "categorical_native"
+
+# -----------------------------------------------------------------------------
+# 3. Model Hyperparameters
+# -----------------------------------------------------------------------------
+# Default hyperparameters for each supported algorithm. These are used for
+# initial training and as defaults for hyperparameter search spaces.
+hyperparameters:
+  logistic_regression:
+    C: 1.0
+    penalty: "l2"
+    solver: "lbfgs"
+    class_weight: "balanced"
+    max_iter: 1000
+    random_state: 42
+    n_jobs: -1
+
+  random_forest:
+    n_estimators: 300
+    max_depth: 16
+    min_samples_split: 5
+    min_samples_leaf: 2
+    class_weight: "balanced"
+    random_state: 42
+    n_jobs: -1
+
+  xgboost:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    gamma: 0.1
+    reg_alpha: 0.0
+    reg_lambda: 1.0
+    scale_pos_weight: "balanced"  # Or numeric ratio
+    eval_metric: "logloss"
+    random_state: 42
+    n_jobs: -1
+    use_label_encoder: false
+
+  lightgbm:
+    n_estimators: 500
+    num_leaves: 31
+    max_depth: -1
+    learning_rate: 0.05
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    class_weight: "balanced"
+    random_state: 42
+    n_jobs: -1
+    verbose: -1
+
+  catboost:
+    iterations: 500
+    depth: 6
+    learning_rate: 0.05
+    l2_leaf_reg: 3.0
+    border_count: 254
+    loss_function: "Logloss"
+    eval_metric: "AUC"
+    auto_class_weights: "Balanced"
+    random_seed: 42
+    verbose: false
+
+# -----------------------------------------------------------------------------
+# 4. Hyperparameter Search Spaces
+# -----------------------------------------------------------------------------
+# Search spaces for Optuna-based tuning. Ranges are inclusive.
+search_spaces:
+  logistic_regression:
+    C:
+      type: "float"
+      low: 0.0001
+      high: 10.0
+      log: true
+    class_weight:
+      type: "categorical"
+      choices: ["balanced", null]
+    max_iter:
+      type: "int"
+      low: 500
+      high: 2000
+
+  random_forest:
+    n_estimators:
+      type: "int"
+      low: 100
+      high: 500
+    max_depth:
+      type: "int"
+      low: 5
+      high: 30
+    min_samples_split:
+      type: "int"
+      low: 2
+      high: 20
+    min_samples_leaf:
+      type: "int"
+      low: 1
+      high: 10
+    class_weight:
+      type: "categorical"
+      choices: ["balanced", "balanced_subsample", null]
+
+  xgboost:
+    max_depth:
+      type: "int"
+      low: 3
+      high: 10
+    learning_rate:
+      type: "float"
+      low: 0.01
+      high: 0.3
+      log: true
+    n_estimators:
+      type: "int"
+      low: 100
+      high: 1000
+    subsample:
+      type: "float"
+      low: 0.6
+      high: 1.0
+    colsample_bytree:
+      type: "float"
+      low: 0.6
+      high: 1.0
+    gamma:
+      type: "float"
+      low: 0.0
+      high: 5.0
+    reg_alpha:
+      type: "float"
+      low: 0.0
+      high: 1.0
+    reg_lambda:
+      type: "float"
+      low: 0.0
+      high: 10.0
+
+  lightgbm:
+    num_leaves:
+      type: "int"
+      low: 15
+      high: 150
+    learning_rate:
+      type: "float"
+      low: 0.01
+      high: 0.3
+      log: true
+    n_estimators:
+      type: "int"
+      low: 100
+      high: 1000
+    feature_fraction:
+      type: "float"
+      low: 0.6
+      high: 1.0
+    bagging_fraction:
+      type: "float"
+      low: 0.6
+      high: 1.0
+    bagging_freq:
+      type: "int"
+      low: 1
+      high: 10
+    max_depth:
+      type: "int"
+      low: -1
+      high: 16
+
+  catboost:
+    depth:
+      type: "int"
+      low: 4
+      high: 10
+    learning_rate:
+      type: "float"
+      low: 0.01
+      high: 0.3
+      log: true
+    iterations:
+      type: "int"
+      low: 200
+      high: 1500
+    l2_leaf_reg:
+      type: "float"
+      low: 1.0
+      high: 10.0
+    border_count:
+      type: "categorical"
+      choices: [32, 64, 128, 254]
+
+# -----------------------------------------------------------------------------
+# 5. Feature Selection Settings
+# -----------------------------------------------------------------------------
+feature_selection:
+  # Whether to perform feature selection before training.
+  enabled: true
+
+  # Strategy for feature selection.
+  # Options: correlation, model_importance, rfe, permutation, none.
+  method: "model_importance"
+
+  # Number of features to retain. Set to null to use threshold-based selection.
+  k_best: null
+
+  # Minimum importance threshold for model_importance method.
+  importance_threshold: 0.005
+
+  # Correlation threshold for dropping highly correlated numerical features.
+  correlation_threshold: 0.95
+
+  # Recursive Feature Elimination settings (if method = 'rfe').
+  rfe:
+    estimator: "logistic_regression"
+    step: 1
+    min_features: 5
+
+  # Permutation importance settings (if method = 'permutation').
+  permutation:
+    n_repeats: 10
+    random_state: 42
+
+# -----------------------------------------------------------------------------
+# 6. Evaluation Metrics
+# -----------------------------------------------------------------------------
+evaluation:
+  # Primary metric for model selection and hyperparameter optimization.
+  primary_metric: "auc_roc"
+
+  # Metrics computed during training, validation, and testing.
+  metrics:
+    - name: "accuracy"
+      threshold: 0.80
+
+    - name: "precision"
+      threshold: 0.65
+      average: "binary"
+      pos_label: 1
+
+    - name: "recall"
+      threshold: 0.60
+      average: "binary"
+      pos_label: 1
+
+    - name: "f1"
+      average: "binary"
+      pos_label: 1
+
+    - name: "auc_roc"
+      threshold: 0.85
+
+    - name: "brier_score"
+      threshold: 0.20
+
+    - name: "log_loss"
+
+  # Threshold used for binary classification reporting.
+  classification_threshold: 0.5
+
+  # Operational threshold tuning target (on validation set).
+  threshold_tuning:
+    enabled: true
+    target_metric: "f1"       # Metric to optimize when selecting threshold
+    min_recall: 0.60
+    min_precision: 0.65
+
+# -----------------------------------------------------------------------------
+# 7. Cross-Validation Configuration
+# -----------------------------------------------------------------------------
+cross_validation:
+  # Cross-validation strategy.
+  # Options: kfold, stratified_kfold, stratified_shuffle_split, timeseries.
+  method: "stratified_kfold"
+
+  # Number of folds.
+  n_splits: 5
+
+  # Whether to shuffle before splitting.
+  shuffle: true
+
+  # Random seed for reproducibility.
+  random_state: 42
+
+# -----------------------------------------------------------------------------
+# 8. Class Imbalance Handling
+# -----------------------------------------------------------------------------
+class_imbalance:
+  # Strategy for handling class imbalance.
+  # Options: class_weight, smote, adasyn, threshold_tuning, none.
+  strategy: "class_weight"
+
+  # SMOTE/ADASYN settings (if applicable).
+  sampling:
+    method: "smote"
+    k_neighbors: 5
+    sampling_strategy: "auto"
+    random_state: 42
+
+# -----------------------------------------------------------------------------
+# 9. Model Saving Options
+# -----------------------------------------------------------------------------
+model_saving:
+  # Directory for saved model artifacts.
+  output_dir: "models"
+
+  # Filename for the final trained model.
+  model_filename: "churn_model.pkl"
+
+  # Filename for the preprocessing pipeline.
+  preprocessor_filename: "preprocessor.pkl"
+
+  # Format for saving the model.
+  # Options: pickle, joblib, onnx, mlflow.
+  format: "mlflow"
+
+  # Whether to save the full preprocessing + model pipeline as one artifact.
+  save_pipeline: true
+
+  # Whether to save SHAP explainer alongside the model.
+  save_explainer: true
+
+  # Compression for serialized artifacts.
+  compression: null          # Options: null, gzip, bz2, xz
+
+# -----------------------------------------------------------------------------
+# 10. Model Registry Configuration
+# -----------------------------------------------------------------------------
+model_registry:
+  # Registry backend. Options: mlflow, local.
+  backend: "mlflow"
+
+  # MLflow experiment and model names.
+  experiment_name: "telco_customer_churn"
+  registered_model_name: "telco_churn_classifier"
+
+  # MLflow tracking URI. Override with MLFLOW_TRACKING_URI env variable.
+  tracking_uri: "http://localhost:5000"
+
+  # Stage labels for model promotion.
+  stages:
+    - "Staging"
+    - "Production"
+    - "Archived"
+
+  # Auto-promotion rules.
+  auto_promote:
+    enabled: true
+    target_stage: "Production"
+    required_metrics:
+      auc_roc: 0.85
+      recall: 0.60
+      precision: 0.65
+
+  # Tags to attach to registered model versions.
+  tags:
+    project: "Telco Customer Churn Prediction"
+    task: "binary_classification"
+    framework: "catboost"
+
+  # Artifacts to log with each model version.
+  artifacts:
+    - "model"
+    - "preprocessor"
+    - "metrics.json"
+    - "confusion_matrix.png"
+    - "roc_curve.png"
+    - "shap_summary.png"
+    - "config.yaml"
+
+# -----------------------------------------------------------------------------
+# 11. Training Runtime Settings
+# -----------------------------------------------------------------------------
+training:
+  # Whether to train all enabled candidate models.
+  train_all_candidates: true
+
+  # Whether to run hyperparameter tuning.
+  run_hyperparameter_tuning: true
+
+  # Early stopping configuration for gradient boosting models.
+  early_stopping:
+    enabled: true
+    patience: 50
+    min_delta: 0.001
+
+  # Logging frequency.
+  log_every_n_steps: 10
