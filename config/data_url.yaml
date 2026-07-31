@@ -1,0 +1,34 @@
+# Github repository information
+github:
+  owner: RICHARD-OBENG
+  repository: datasets
+  branch: main
+
+
+# Data URL configuration
+datasets:
+  heart_diseases:
+    zip_file: WA_Fn-UseC_-Telco-Customer-Churn.zip
+
+
+# Data download configuration
+download:
+  destination: data/raw
+  extract: true
+  remove_zip: true
+
+# Validation configuration
+validation:
+  enable: true
+
+  # Expected files after extraction
+  expected_files:
+    - data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+
+  # Minimum file size in bytes for validation
+  min_file_size: 1000
+
+# Logging configuration
+logging:
+  level: INFO
+  log_file: logs/data_download.log
