@@ -1,0 +1,354 @@
+# =============================================================================
+# Telco Customer Churn Prediction — API Service Configuration
+# =============================================================================
+# This file configures the FastAPI inference service. It covers server binding,
+# concurrency, security, request limits, timeouts, health checks, and logging.
+# Override values via environment variables for production deployment.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. API Metadata
+# -----------------------------------------------------------------------------
+api:
+  # API service name.
+  name: "Telco Customer Churn Prediction API"
+
+  # API version following semantic versioning.
+  version: "1.0.0"
+
+  # Short description shown in OpenAPI documentation.
+  description: "Production REST API for predicting telecom customer churn probability."
+
+  # Contact information for API consumers.
+  contact:
+    name: "Richard Obeng"
+    email: "richardkwabenaobeng17@gmail.com"
+    url: "https://github.com/RICHARD-OBENG"
+
+  # OpenAPI documentation metadata.
+  docs:
+    title: "Telco Churn Prediction API"
+    swagger_ui_path: "/docs"
+    redoc_path: "/redoc"
+    openapi_schema_path: "/openapi.json"
+
+# -----------------------------------------------------------------------------
+# 2. Server Binding
+# -----------------------------------------------------------------------------
+server:
+  # Host interface to bind to. Use 0.0.0.0 to accept external connections.
+  host: "0.0.0.0"
+
+  # Port the API listens on.
+  port: 8000
+
+  # Whether to enable auto-reload on code changes. Disable in production.
+  reload: false
+
+  # ASGI server implementation. Options: uvicorn, gunicorn.
+  provider: "uvicorn"
+
+  # Root path when running behind a reverse proxy with path prefix.
+  root_path: ""
+
+# -----------------------------------------------------------------------------
+# 3. Concurrency and Workers
+# -----------------------------------------------------------------------------
+concurrency:
+  # Number of Uvicorn/Gunicorn worker processes.
+  # -1 means auto-detect based on CPU cores (2 * cores + 1).
+  workers: -1
+
+  # Maximum number of concurrent requests per worker.
+  # Controls request queueing before rejection.
+  max_requests_per_worker: 1000
+
+  # Graceful restart after handling this many requests (prevents memory leaks).
+  max_requests_jitter: 100
+
+  # Number of threads per worker (for sync routes or mixed workloads).
+  threads_per_worker: 1
+
+  # Request queue size. Increase for bursty traffic.
+  backlog: 2048
+
+# -----------------------------------------------------------------------------
+# 4. CORS Settings
+# -----------------------------------------------------------------------------
+cors:
+  # Whether to enable Cross-Origin Resource Sharing.
+  enabled: true
+
+  # Allowed origins. Use ["*"] only in development.
+  allow_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+    - "https://app.telco-churn.example.com"
+
+  # Allowed HTTP methods.
+  allow_methods:
+    - "GET"
+    - "POST"
+    - "OPTIONS"
+
+  # Allowed request headers.
+  allow_headers:
+    - "Content-Type"
+    - "Authorization"
+    - "X-Request-ID"
+
+  # Whether to allow credentials (cookies, auth headers).
+  allow_credentials: true
+
+  # Max age for preflight cache in seconds.
+  max_age: 600
+
+# -----------------------------------------------------------------------------
+# 5. Timeout Settings
+# -----------------------------------------------------------------------------
+timeouts:
+  # Maximum time to wait for a single request to complete (seconds).
+  request_timeout_seconds: 30
+
+  # Maximum time for keep-alive connections (seconds).
+  keep_alive_seconds: 5
+
+  # Graceful shutdown timeout (seconds).
+  shutdown_timeout_seconds: 30
+
+  # Maximum time allowed for model loading at startup (seconds).
+  model_load_timeout_seconds: 120
+
+# -----------------------------------------------------------------------------
+# 6. Request Limits
+# -----------------------------------------------------------------------------
+limits:
+  # Maximum request body size in bytes (10 MB).
+  max_request_body_size: 10485760
+
+  # Maximum number of records per batch prediction request.
+  max_batch_size: 1000
+
+  # Maximum number of fields allowed in a single JSON payload.
+  max_json_fields: 10000
+
+  # Rate limiting (enforced at gateway in production; shown here for reference).
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+    burst_size: 20
+
+# -----------------------------------------------------------------------------
+# 7. Authentication Placeholder
+# -----------------------------------------------------------------------------
+# Authentication is intentionally decoupled from the service in this release.
+# The API is expected to run behind an authenticating reverse proxy or gateway.
+# Supported mechanisms are listed below for production planning.
+# -----------------------------------------------------------------------------
+authentication:
+  # Whether authentication is enabled in the application layer.
+  enabled: false
+
+  # Preferred authentication strategy.
+  # Options: oauth2, api_key, mTLS, none.
+  strategy: "none"
+
+  # OAuth2 client credentials configuration (if strategy = oauth2).
+  oauth2:
+    issuer: "${OAUTH2_ISSUER}"            # e.g., https://auth.example.com
+    audience: "${OAUTH2_AUDIENCE}"        # API identifier
+    jwks_url: "${OAUTH2_JWKS_URL}"        # JWKS endpoint for token validation
+    required_scopes:
+      - "predict:read"
+      - "predict:write"
+
+  # API key configuration (if strategy = api_key).
+  api_key:
+    header_name: "X-API-Key"
+    keys: []                               # Loaded from secrets manager in production
+
+  # Mutual TLS configuration (if strategy = mTLS).
+  mtls:
+    enabled: false
+    ca_cert_path: "/etc/certs/ca.crt"
+    verify_client: true
+
+# -----------------------------------------------------------------------------
+# 8. Model Serving Configuration
+# -----------------------------------------------------------------------------
+model:
+  # Path to the trained model artifact or MLflow model URI.
+  path: "models/churn_model"
+
+  # MLflow model stage or version to load.
+  version: "Production"
+
+  # Decision threshold for binary churn classification.
+  threshold: 0.5
+
+  # Whether to enable SHAP-based local explanations.
+  explainability:
+    enabled: true
+    top_features: 3
+
+  # Whether to validate incoming feature schemas before prediction.
+  validate_input_schema: true
+
+# -----------------------------------------------------------------------------
+# 9. Health Check Endpoint
+# -----------------------------------------------------------------------------
+health:
+  # Path for liveness and general health status.
+  endpoint: "/health"
+
+  # Path for readiness probe.
+  readiness_endpoint: "/ready"
+
+  # Path for Prometheus metrics.
+  metrics_endpoint: "/metrics"
+
+  # Response schema.
+  response:
+    status_key: "status"
+    healthy_value: "healthy"
+    ready_value: "ready"
+
+  # Probe configuration.
+  probes:
+    liveness:
+      enabled: true
+      interval_seconds: 15
+      timeout_seconds: 5
+      failure_threshold: 3
+
+    readiness:
+      enabled: true
+      interval_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3
+
+# -----------------------------------------------------------------------------
+# 10. Logging Options
+# -----------------------------------------------------------------------------
+logging:
+  # Logging level. Options: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+  level: "INFO"
+
+  # Log format: json (production) or text (development).
+  format: "json"
+
+  # Whether to include request IDs in log messages for distributed tracing.
+  include_request_id: true
+
+  # Whether to write logs to file in addition to stdout.
+  log_to_file: true
+
+  # Log file path.
+  log_file: "logs/api.log"
+
+  # Log rotation settings.
+  rotation:
+    max_bytes: 10485760                    # 10 MB
+    backup_count: 5
+
+  # Access log configuration.
+  access_log:
+    enabled: true
+    format: "combined"
+
+# -----------------------------------------------------------------------------
+# 11. Monitoring and Observability
+# -----------------------------------------------------------------------------
+monitoring:
+  # Prometheus metrics configuration.
+  prometheus:
+    enabled: true
+    endpoint: "/metrics"
+    multiproc_dir: "/tmp/prometheus"
+
+  # Distributed tracing (optional).
+  tracing:
+    enabled: false
+    exporter: "jaeger"                    # Options: jaeger, zipkin, otlp
+    service_name: "telco-churn-api"
+
+  # Service-level objectives.
+  slo:
+    p95_latency_ms: 200
+    p99_latency_ms: 500
+    error_rate_threshold: 0.01
+    availability: 0.995
+
+# -----------------------------------------------------------------------------
+# 12. Error Handling
+# -----------------------------------------------------------------------------
+errors:
+  # Whether to return detailed error messages. Disable in production for security.
+  include_traceback: false
+
+  # Default error response schema.
+  response:
+    include_error_code: true
+    include_request_id: true
+
+# -----------------------------------------------------------------------------
+# 13. Environment-Specific Overrides
+# -----------------------------------------------------------------------------
+# These sections are merged with the base config based on the active environment.
+# -----------------------------------------------------------------------------
+development:
+  server:
+    reload: true
+  concurrency:
+    workers: 1
+  cors:
+    allow_origins:
+      - "*"
+  logging:
+    level: "DEBUG"
+    format: "text"
+    log_to_file: false
+  errors:
+    include_traceback: true
+
+testing:
+  server:
+    port: 8001
+  concurrency:
+    workers: 1
+  limits:
+    max_batch_size: 100
+  logging:
+    level: "INFO"
+    format: "text"
+
+staging:
+  server:
+    port: 8000
+  concurrency:
+    workers: 2
+  authentication:
+    enabled: true
+    strategy: "api_key"
+  logging:
+    level: "INFO"
+    format: "json"
+
+production:
+  server:
+    port: 8000
+    reload: false
+  concurrency:
+    workers: 4
+  authentication:
+    enabled: true
+    strategy: "oauth2"
+  logging:
+    level: "INFO"
+    format: "json"
+    log_to_file: true
+  monitoring:
+    prometheus:
+      enabled: true
+    tracing:
+      enabled: true
