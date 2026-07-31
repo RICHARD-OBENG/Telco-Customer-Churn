@@ -1,0 +1,265 @@
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "telco-customer-churn"
+version = "0.1.0"
+description = "A production machine learning system for Telco Customer Churn"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.11,<3.12"
+authors = [
+    {name = "Richard Obeng", email = "richardkwabenaobeng17@gmail.com"},
+]
+maintainers = [
+    {name = "Richard Obeng", email = "richardkwabenaobeng17@gmail.com"},
+]
+keywords = [
+    "telco",
+    "customer-churn",
+    "churn-prediction",
+    "machine-learning",
+    "ml",
+    "data-science",
+    "classification",
+    "scikit-learn",
+    "xgboost",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# Core production dependencies
+dependencies = [
+    # Data pipeline
+    "PyYAML>=6.0.2",
+    "requests>=2.32.3",
+    "tqdm>=4.66.5",
+    # Data processing
+    "pandas>=2.2.3",
+    "numpy>=1.26.4,<2.0.0",
+    "openpyxl>=3.1.5",
+    # Visualization
+    "matplotlib>=3.9.2",
+    "seaborn>=0.13.2",
+    "plotly>=5.24.1",
+    "missingno>=0.5.2",
+    # Machine learning
+    "scikit-learn>=1.5.2",
+    "scipy>=1.14.1",
+    "xgboost>=2.1.2",
+    "catboost>=1.2.7",
+    "lightgbm>=4.5.0",
+    "imbalanced-learn>=0.12.4",
+    "feature-engine>=1.8.2",
+    "shap>=0.46.0",
+    # Environment & configuration
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+experiment = [
+    "mlflow>=2.17.2",
+    "ydata-profiling>=4.12.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/RICHARD-OBENG/telco-customer-churn"
+Repository = "https://github.com/RICHARD-OBENG/telco-customer-churn"
+Documentation = "https://richard-obeng.github.io/telco-customer-churn/"
+
+[project.scripts]
+# Uncomment when a CLI entry point is implemented:
+# telco-churn = "telco_customer_churn.cli:main"
+
+[tool.poetry]
+packages = [{include = "telco_customer_churn", from = "src"}]
+requires-poetry = ">=1.7.0"
+
+# ------------------------------------------------------------------------------
+# Dependency Groups
+# ------------------------------------------------------------------------------
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = ">=4.0.1"
+pip-audit = ">=2.7.3"
+ipdb = ">=0.13.13"
+py-spy = ">=0.3.14"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=8.3.3"
+pytest-cov = ">=5.0.0"
+pytest-mock = ">=3.14.0"
+
+[tool.poetry.group.lint.dependencies]
+ruff = ">=0.6.0"
+flake8 = ">=7.1.1"
+bandit = {extras = ["toml"], version = ">=1.7.10"}
+pylint = ">=3.3.0"
+
+[tool.poetry.group.format.dependencies]
+black = ">=24.10.0"
+isort = ">=5.13.2"
+
+[tool.poetry.group.type.dependencies]
+mypy = ">=1.13.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = ">=8.1.3"
+sphinx-rtd-theme = ">=3.0.2"
+
+[tool.poetry.group.notebook.dependencies]
+jupyter = ">=1.1.1"
+jupyterlab = ">=4.3.1"
+notebook = ">=7.3.1"
+ipykernel = ">=6.29.5"
+ipywidgets = ">=8.1.5"
+nbformat = ">=5.10.4"
+
+# ------------------------------------------------------------------------------
+# Tool Configurations
+# ------------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["src", "tests"]
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "dist",
+    "build",
+    "docs/_build",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+]
+ignore = [
+    "D100",  # Missing docstring in public module
+    "D104",  # Missing docstring in public package
+]
+pydocstyle = {convention = "google"}
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D", "ARG"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.black]
+target-version = ["py311"]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.mypy_cache
+  | \.pytest_cache
+  | __pycache__
+  | build
+  | dist
+  | docs/_build
+)/
+'''
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+line_length = 88
+known_first_party = ["telco_customer_churn"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--cov=telco_customer_churn",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__main__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
+files = ["src", "tests"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs"]
+skips = ["B101"]  # assert_used is acceptable in tests; override in CI if needed
+severity = "medium"
+confidence = "medium"
+
+[tool.pylint.messages_control]
+max-line-length = 88
+disable = [
+    "C0103",  # invalid-name
+    "R0903",  # too-few-public-methods
+    "R0913",  # too-many-arguments
+]
+
+[tool.pylint.typecheck]
+generated-members = ["numpy.*", "pandas.*"]
