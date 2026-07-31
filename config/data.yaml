@@ -1,0 +1,390 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Data Configuration
+# =============================================================================
+# This file centralizes all data-related settings: paths, schema, features,
+# splitting strategy, preprocessing, and validation rules. Keep this file under
+# version control and update it whenever the dataset or feature set changes.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Data Paths
+# -----------------------------------------------------------------------------
+paths:
+  # Root directory for all data artifacts.
+  root: "data"
+
+  # Raw data: downloaded archives and extracted source files.
+  raw:
+    dir: "data/raw"
+    archive_dir: "data/raw/archives"
+    extracted_dir: "data/raw/extracted"
+    source_file: "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+
+  # Processed data: cleaned, engineered, and split datasets.
+  processed:
+    dir: "data/processed"
+    train: "data/processed/train.parquet"
+    validation: "data/processed/validation.parquet"
+    test: "data/processed/test.parquet"
+    features: "data/processed/features.parquet"
+    target: "data/processed/target.parquet"
+
+  # External data: third-party or augmented datasets (optional).
+  external:
+    dir: "data/external"
+    enabled: false
+    sources: []
+
+  # Interim data: temporary outputs between pipeline steps.
+  interim:
+    dir: "data/interim"
+
+# -----------------------------------------------------------------------------
+# 2. Dataset Metadata
+# -----------------------------------------------------------------------------
+dataset:
+  # Display name of the dataset.
+  name: "IBM Telco Customer Churn"
+
+  # Brief description.
+  description: "Synthetic telecom customer dataset for churn prediction benchmarking."
+
+  # Expected number of rows and columns (used for validation checks).
+  expected_rows: 7043
+  expected_columns: 21
+
+  # File format of the source data.
+  format: "csv"
+
+  # CSV parsing options.
+  read_options:
+    sep: ","
+    header: 0
+    encoding: "utf-8"
+    na_values: ["", " ", "NA", "N/A", "null", "NULL"]
+
+# -----------------------------------------------------------------------------
+# 3. Column Definitions
+# -----------------------------------------------------------------------------
+columns:
+  # Target variable to predict.
+  target:
+    name: "Churn"
+    type: "categorical"
+    positive_label: "Yes"
+    negative_label: "No"
+    encoding:
+      Yes: 1
+      No: 0
+
+  # Unique identifier column. Excluded from modeling.
+  id:
+    name: "customerID"
+    type: "string"
+
+  # Columns explicitly excluded from feature matrices.
+  exclude:
+    - "customerID"           # Unique identifier, no predictive signal
+
+  # Demographic features.
+  demographic:
+    - "gender"
+    - "SeniorCitizen"
+    - "Partner"
+    - "Dependents"
+
+  # Account-related features.
+  account:
+    - "tenure"
+    - "Contract"
+    - "PaperlessBilling"
+    - "PaymentMethod"
+    - "MonthlyCharges"
+    - "TotalCharges"
+
+  # Service subscription features.
+  services:
+    - "PhoneService"
+    - "MultipleLines"
+    - "InternetService"
+    - "OnlineSecurity"
+    - "OnlineBackup"
+    - "DeviceProtection"
+    - "TechSupport"
+    - "StreamingTV"
+    - "StreamingMovies"
+
+# -----------------------------------------------------------------------------
+# 4. Feature Types
+# -----------------------------------------------------------------------------
+features:
+  # Categorical feature columns.
+  categorical:
+    - "gender"
+    - "SeniorCitizen"
+    - "Partner"
+    - "Dependents"
+    - "PhoneService"
+    - "MultipleLines"
+    - "InternetService"
+    - "OnlineSecurity"
+    - "OnlineBackup"
+    - "DeviceProtection"
+    - "TechSupport"
+    - "StreamingTV"
+    - "StreamingMovies"
+    - "Contract"
+    - "PaperlessBilling"
+    - "PaymentMethod"
+
+  # Numerical feature columns.
+  numerical:
+    - "tenure"
+    - "MonthlyCharges"
+    - "TotalCharges"
+
+  # Ordinal categorical features with explicit order (if any).
+  ordinal: {}
+
+  # Features derived during feature engineering.
+  engineered:
+    - name: "avg_monthly_charge"
+      type: "numerical"
+      description: "Average monthly spend over customer lifetime."
+
+    - name: "tenure_group"
+      type: "categorical"
+      description: "Binned tenure segments."
+
+    - name: "has_internet"
+      type: "binary"
+      description: "Indicator for any internet service."
+
+    - name: "has_phone"
+      type: "binary"
+      description: "Indicator for phone service."
+
+    - name: "num_addons"
+      type: "numerical"
+      description: "Count of subscribed security/backup/support services."
+
+    - name: "is_month_to_month"
+      type: "binary"
+      description: "Indicator for month-to-month contract."
+
+    - name: "is_electronic_check"
+      type: "binary"
+      description: "Indicator for electronic check payment method."
+
+# -----------------------------------------------------------------------------
+# 5. Data Splitting
+# -----------------------------------------------------------------------------
+split:
+  # Method for splitting data.
+  method: "stratified"
+
+  # Proportions for each partition. Must sum to 1.0.
+  ratios:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+
+  # Whether to shuffle before splitting.
+  shuffle: true
+
+  # Random seed for reproducibility.
+  random_seed: 42
+
+  # Stratify on the target column to preserve class distribution.
+  stratify_column: "Churn"
+
+# -----------------------------------------------------------------------------
+# 6. Preprocessing Options
+# -----------------------------------------------------------------------------
+preprocessing:
+  # Missing value handling strategy.
+  missing_values:
+    detect_values: ["", " ", "NA", "N/A", "null", "NULL"]
+
+    total_charges:
+      strategy: "derived"       # tenure * MonthlyCharges, or 0.0 if tenure == 0
+      fallback_value: 0.0
+
+    default_numerical:
+      strategy: "median"
+
+    default_categorical:
+      strategy: "mode"
+
+  # Outlier handling.
+  outliers:
+    method: "iqr"               # Options: iqr, zscore, none
+    threshold: 1.5
+    apply_to: ["MonthlyCharges", "TotalCharges", "tenure"]
+    action: "clip"              # Options: clip, remove, none
+
+  # Categorical encoding.
+  encoding:
+    linear_models:
+      method: "onehot"
+      drop: "first"
+      handle_unknown: "ignore"
+
+    tree_models:
+      method: "label"
+      handle_unknown: "use_encoded_value"
+      unknown_value: -1
+
+    catboost:
+      method: "native"          # Passed directly to CatBoost
+
+  # Numerical scaling.
+  scaling:
+    linear_models:
+      method: "standard"        # Options: standard, minmax, robust
+      with_mean: true
+      with_std: true
+
+    tree_models:
+      method: "none"            # Tree models are scale-invariant
+
+  # Target encoding mapping.
+  target_encoding:
+    Churn:
+      Yes: 1
+      No: 0
+
+  # Text cleaning.
+  text_cleaning:
+    strip_whitespace: true
+    lowercase: false
+    replace_special_chars: false
+
+# -----------------------------------------------------------------------------
+# 7. Feature Engineering
+# -----------------------------------------------------------------------------
+feature_engineering:
+  # Whether to generate engineered features.
+  enabled: true
+
+  avg_monthly_charge:
+    enabled: true
+    formula: "TotalCharges / tenure"
+    handle_zero_division: 0.0
+
+  tenure_group:
+    enabled: true
+    bins: [0, 12, 24, 48, 60]
+    labels: ["0-12", "13-24", "25-48", "49-60", "61+"]
+    right: false
+
+  has_internet:
+    enabled: true
+    column: "InternetService"
+    value: "No"
+    invert: true
+
+  has_phone:
+    enabled: true
+    column: "PhoneService"
+    value: "Yes"
+
+  num_addons:
+    enabled: true
+    columns:
+      - "OnlineSecurity"
+      - "OnlineBackup"
+      - "DeviceProtection"
+      - "TechSupport"
+    positive_value: "Yes"
+
+  is_month_to_month:
+    enabled: true
+    column: "Contract"
+    value: "Month-to-month"
+
+  is_electronic_check:
+    enabled: true
+    column: "PaymentMethod"
+    value: "Electronic check"
+
+# -----------------------------------------------------------------------------
+# 8. Data Validation Settings
+# -----------------------------------------------------------------------------
+validation:
+  # Schema validation rules.
+  schema:
+    enforce_column_order: false
+    allow_extra_columns: false
+    allow_missing_columns: false
+
+  # Column-level checks.
+  columns:
+    required:
+      - "customerID"
+      - "gender"
+      - "SeniorCitizen"
+      - "Partner"
+      - "Dependents"
+      - "tenure"
+      - "PhoneService"
+      - "MultipleLines"
+      - "InternetService"
+      - "OnlineSecurity"
+      - "OnlineBackup"
+      - "DeviceProtection"
+      - "TechSupport"
+      - "StreamingTV"
+      - "StreamingMovies"
+      - "Contract"
+      - "PaperlessBilling"
+      - "PaymentMethod"
+      - "MonthlyCharges"
+      - "TotalCharges"
+      - "Churn"
+
+    unique:
+      - "customerID"
+
+  # Range and constraint checks.
+  constraints:
+    tenure:
+      min: 0
+      max: 100
+
+    MonthlyCharges:
+      min: 0.0
+      max: 500.0
+
+    TotalCharges:
+      min: 0.0
+      max: 10000.0
+
+    SeniorCitizen:
+      allowed_values: [0, 1]
+
+    Churn:
+      allowed_values: ["Yes", "No"]
+
+  # Missing value thresholds.
+  missing_values:
+    max_fraction_per_column: 0.10
+    max_fraction_total: 0.05
+
+  # Duplicate checks.
+  duplicates:
+    check_id_duplicates: true
+    check_row_duplicates: true
+    max_duplicate_fraction: 0.01
+
+  # Class distribution check.
+  class_balance:
+    target: "Churn"
+    min_positive_fraction: 0.15
+    max_positive_fraction: 0.50
+
+  # Consistency checks between columns.
+  consistency:
+    total_charges:
+      description: "TotalCharges should approximate tenure * MonthlyCharges"
+      tolerance: 1.0
