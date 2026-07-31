@@ -1,0 +1,197 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Logging Configuration
+# =============================================================================
+# Production-ready Python logging configuration using dictConfig-compatible
+# YAML. Emits structured JSON logs for aggregation and plain text logs for
+# local development. Supports console, file, and rotating file handlers.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Global Logging Settings
+# -----------------------------------------------------------------------------
+version: 1
+
+# Disable all existing loggers to ensure full control via this config.
+disable_existing_loggers: false
+
+# -----------------------------------------------------------------------------
+# 2. Log Formatters
+# -----------------------------------------------------------------------------
+formatters:
+  # Text formatter for local development and debugging.
+  text:
+    format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+
+  # JSON formatter for production log aggregation.
+  json:
+    # If using python-json-logger, this becomes:
+    # class: pythonjsonlogger.jsonlogger.JsonFormatter
+    # format: "%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d"
+    format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    datefmt: "%Y-%m-%dT%H:%M:%S%z"
+
+  # Detailed formatter for error logs, including exception tracebacks.
+  detailed:
+    format: "%(asctime)s | %(levelname)-8s | %(name)s | %(filename)s:%(lineno)d | %(funcName)s() | %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+
+# -----------------------------------------------------------------------------
+# 3. Log Filters
+# -----------------------------------------------------------------------------
+filters:
+  # Filter out log records below WARNING for the error file handler.
+  errors_only:
+    name: ""
+
+# -----------------------------------------------------------------------------
+# 4. Log Handlers
+# -----------------------------------------------------------------------------
+handlers:
+  # Console handler: always active, useful for Docker and local dev.
+  console:
+    class: "logging.StreamHandler"
+    level: "DEBUG"
+    formatter: "text"
+    stream: "ext://sys.stdout"
+
+  # Rotating file handler for general application logs.
+  file:
+    class: "logging.handlers.RotatingFileHandler"
+    level: "INFO"
+    formatter: "json"
+    filename: "logs/application.log"
+    maxBytes: 10485760          # 10 MB per file
+    backupCount: 5
+    encoding: "utf-8"
+    delay: false
+
+  # Rotating file handler dedicated to error-level logs.
+  error_file:
+    class: "logging.handlers.RotatingFileHandler"
+    level: "ERROR"
+    formatter: "detailed"
+    filename: "logs/error.log"
+    maxBytes: 10485760          # 10 MB per file
+    backupCount: 10
+    encoding: "utf-8"
+    delay: false
+
+# -----------------------------------------------------------------------------
+# 5. Loggers
+# -----------------------------------------------------------------------------
+loggers:
+  # Application logger for project-specific modules under src/.
+  src:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+      - "error_file"
+    propagate: false
+
+  # Data pipeline logger.
+  src.data:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+    propagate: false
+
+  # Feature engineering logger.
+  src.features:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+    propagate: false
+
+  # Model training logger.
+  src.models:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+      - "error_file"
+    propagate: false
+
+  # API service logger.
+  src.api:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+      - "error_file"
+    propagate: false
+
+  # Utility logger.
+  src.utils:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+    propagate: false
+
+# -----------------------------------------------------------------------------
+# 6. Root Logger
+# -----------------------------------------------------------------------------
+root:
+  level: "INFO"
+  handlers:
+    - "console"
+    - "file"
+    - "error_file"
+
+# -----------------------------------------------------------------------------
+# 7. Environment-Specific Overrides
+# -----------------------------------------------------------------------------
+# The following sections are merged based on the active environment.
+# They override the root and application loggers above.
+# -----------------------------------------------------------------------------
+development:
+  root:
+    level: "DEBUG"
+    handlers:
+      - "console"
+  loggers:
+    src:
+      level: "DEBUG"
+      handlers:
+        - "console"
+      propagate: false
+
+testing:
+  root:
+    level: "INFO"
+    handlers:
+      - "console"
+  loggers:
+    src:
+      level: "INFO"
+      handlers:
+        - "console"
+      propagate: false
+
+staging:
+  root:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+      - "error_file"
+  formatters:
+    text:
+      format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+      datefmt: "%Y-%m-%dT%H:%M:%S%z"
+
+production:
+  root:
+    level: "INFO"
+    handlers:
+      - "console"
+      - "file"
+      - "error_file"
+  formatters:
+    text:
+      format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+      datefmt: "%Y-%m-%dT%H:%M:%S%z"
