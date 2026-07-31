@@ -1,11 +1,13 @@
 """
 Dataset extraction utilities.
 
-Handles extracting compressed dataset archives.
+Handles extracting compressed dataset archives and moving CSV files
+into the raw data folder.
 
 Author: Richard Obeng
 """
 
+import shutil
 from pathlib import Path
 import logging
 import zipfile
@@ -242,3 +244,202 @@ class Extractor:
         raise ExtractionError(
             f"Unsupported archive format: {extension}"
         )
+
+
+    def find_csv_files(
+        self,
+        directory: Path,
+    ) -> list[Path]:
+        """
+        Find all CSV files in a directory recursively.
+
+        Parameters
+        ----------
+        directory : Path
+            Directory to search.
+
+        Returns
+        -------
+        list[Path]
+            Sorted list of CSV file paths.
+
+        Raises
+        ------
+        ExtractionError
+            If no CSV file is found.
+        """
+
+        csv_files = sorted(
+            path for path in directory.rglob("*.csv") if path.is_file()
+        )
+
+
+        if not csv_files:
+
+            raise ExtractionError(
+                f"No CSV file found in {directory}"
+            )
+
+
+        logger.info(
+            "Found %d CSV file(s) in %s",
+            len(csv_files),
+            directory,
+        )
+
+
+        return csv_files
+
+
+
+    def move_csv_to_raw(
+        self,
+        csv_path: Path,
+        raw_dir: Path,
+        new_name: str | None = None,
+    ) -> Path:
+        """
+        Move or copy a CSV file into the raw data folder.
+
+        Parameters
+        ----------
+        csv_path : Path
+            Path to the extracted CSV file.
+
+        raw_dir : Path
+            Destination raw data folder.
+
+        new_name : str, optional
+            New filename for the CSV. If None, the original name is kept.
+
+        Returns
+        -------
+        Path
+            Path to the CSV in the raw folder.
+
+        Raises
+        ------
+        ExtractionError
+            If destination already exists and overwrite is False.
+        """
+
+        raw_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+
+        destination_name = new_name or csv_path.name
+        destination = raw_dir / destination_name
+
+
+        if destination.exists() and not self.overwrite:
+
+            logger.info(
+                "CSV already exists: %s",
+                destination,
+            )
+
+            return destination
+
+
+        shutil.copy2(
+            csv_path,
+            destination,
+        )
+
+
+        logger.info(
+            "CSV saved to raw folder: %s",
+            destination,
+        )
+
+
+        return destination
+
+
+
+    def extract_zip_to_raw(
+        self,
+        zip_path: Path,
+        raw_dir: Path,
+        csv_name: str | None = None,
+        cleanup: bool = False,
+    ) -> Path:
+        """
+        Extract a ZIP archive, locate the CSV, and store it in data/raw.
+
+        Parameters
+        ----------
+        zip_path : Path
+            Path to the ZIP archive.
+
+        raw_dir : Path
+            Destination raw data folder.
+
+        csv_name : str, optional
+            Desired filename for the CSV in the raw folder.
+
+        cleanup : bool, default=False
+            Whether to delete the ZIP archive after extraction.
+
+        Returns
+        -------
+        Path
+            Path to the CSV file in the raw folder.
+
+        Raises
+        ------
+        ExtractionError
+            If extraction or CSV handling fails.
+        """
+
+        extraction_dir = raw_dir / "extracted"
+        extract_to = self.extract_zip(
+            zip_path,
+            extraction_dir,
+        )
+
+
+        csv_files = self.find_csv_files(extract_to)
+
+
+        # Use the first CSV found. Datasets typically contain a single CSV.
+        csv_path = csv_files[0]
+
+
+        raw_csv_path = self.move_csv_to_raw(
+            csv_path,
+            raw_dir,
+            new_name=csv_name,
+        )
+
+
+        if cleanup:
+
+            self.remove_archive(zip_path)
+
+
+        return raw_csv_path
+
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    project_root = Path(__file__).resolve().parents[2]
+    raw_dir = project_root / "data" / "raw"
+    zip_path = raw_dir / "WA_Fn-UseC_-Telco-Customer-Churn.zip"
+
+    extractor = Extractor(overwrite=False)
+
+    extractor.extract_zip_to_raw(
+        zip_path=zip_path,
+        raw_dir=raw_dir,
+        csv_name="telco_customer_churn.csv",
+        cleanup=False,
+    )
