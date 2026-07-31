@@ -1,0 +1,160 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Project Paths Configuration
+# =============================================================================
+# Centralized, relative path definitions for the entire project.
+# All paths are relative to the repository root. This file is loaded by
+# pipeline scripts, training code, and the API service to ensure consistent
+# directory references across environments.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Project Root
+# -----------------------------------------------------------------------------
+# Root directory of the repository. Used as the base for all relative paths.
+root: "."
+
+# -----------------------------------------------------------------------------
+# 2. Data Directories
+# -----------------------------------------------------------------------------
+data:
+  # Parent directory for all data artifacts.
+  root: "data"
+
+  # Raw data downloaded from external sources.
+  raw: "data/raw"
+
+  # Downloaded archives before extraction.
+  archives: "data/raw/archives"
+
+  # Extracted source files (e.g., CSVs).
+  extracted: "data/raw/extracted"
+
+  # Interim data between pipeline steps.
+  interim: "data/interim"
+
+  # Processed, model-ready datasets.
+  processed: "data/processed"
+
+  # External or third-party datasets (optional).
+  external: "data/external"
+
+  # Split datasets produced by the training pipeline.
+  splits:
+    train: "data/processed/train.parquet"
+    validation: "data/processed/validation.parquet"
+    test: "data/processed/test.parquet"
+
+# -----------------------------------------------------------------------------
+# 3. Model Directories
+# -----------------------------------------------------------------------------
+models:
+  # Parent directory for trained model artifacts.
+  root: "models"
+
+  # Serialized model object.
+  model: "models/churn_model.pkl"
+
+  # Serialized preprocessing pipeline.
+  preprocessor: "models/preprocessor.pkl"
+
+  # Complete model + preprocessor pipeline.
+  pipeline: "models/full_pipeline.pkl"
+
+  # MLflow model package.
+  mlflow_model: "models/churn_model"
+
+  # SHAP explainer artifact.
+  explainer: "models/shap_explainer.pkl"
+
+# -----------------------------------------------------------------------------
+# 4. Artifact Directories
+# -----------------------------------------------------------------------------
+artifacts:
+  # Parent directory for ML experiment artifacts.
+  root: "artifacts"
+
+  # MLflow tracking artifacts.
+  mlflow: "artifacts/mlruns"
+
+  # Serialized objects, feature stores, etc.
+  objects: "artifacts/objects"
+
+  # Versioned dataset snapshots.
+  datasets: "artifacts/datasets"
+
+# -----------------------------------------------------------------------------
+# 5. Notebook Directory
+# -----------------------------------------------------------------------------
+# Jupyter notebooks for EDA, experimentation, and reporting.
+notebooks: "notebook"
+
+# -----------------------------------------------------------------------------
+# 6. Report Directory
+# -----------------------------------------------------------------------------
+reports:
+  # Parent directory for generated reports and visualizations.
+  root: "reports"
+
+  # EDA plots and profiling outputs.
+  eda: "reports/eda"
+
+  # Model evaluation plots (ROC, confusion matrix, calibration, SHAP).
+  evaluation: "reports/evaluation"
+
+  # HTML/PDF experiment summaries.
+  summaries: "reports/summaries"
+
+# -----------------------------------------------------------------------------
+# 7. Log Directory
+# -----------------------------------------------------------------------------
+# Application, training, and API logs.
+logs: "logs"
+
+# -----------------------------------------------------------------------------
+# 8. Configuration Directory
+# -----------------------------------------------------------------------------
+# YAML configuration files for data, model, training, API, logging, etc.
+config: "config"
+
+# -----------------------------------------------------------------------------
+# 9. Deployment Directory
+# -----------------------------------------------------------------------------
+deployment:
+  # Parent directory for deployment manifests and scripts.
+  root: "deployment"
+
+  # Docker-related files.
+  docker: "deployment/docker"
+
+  # Kubernetes manifests.
+  k8s: "deployment/k8s"
+
+  # Docker Compose files.
+  compose: "deployment/compose"
+
+  # Infrastructure-as-code templates (Bicep, Terraform, etc.).
+  iac: "deployment/iac"
+
+# -----------------------------------------------------------------------------
+# 10. Documentation Directory
+# -----------------------------------------------------------------------------
+# Markdown documentation files.
+docs: "docs"
+
+# -----------------------------------------------------------------------------
+# 11. Output Directory
+# -----------------------------------------------------------------------------
+# Generic output directory for any generated files not covered above.
+output: "output"
+
+# -----------------------------------------------------------------------------
+# 12. Source Code Directory
+# -----------------------------------------------------------------------------
+# Production source code.
+src: "src"
+
+# -----------------------------------------------------------------------------
+# 13. Test Directory
+# -----------------------------------------------------------------------------
+# Unit and integration tests.
+tests: "tests"
