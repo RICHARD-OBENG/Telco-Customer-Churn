@@ -1,3 +1,5 @@
+"""Compatibility wrapper for the validator module."""
+
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -14,28 +16,9 @@ def _load_module(module_name: str, file_name: str):
     return module
 
 
-_downloader_module = _load_module("src.data._downloader", "01_downloader.py")
-_extractor_module = _load_module("src.data._extractor", "02_extractor.py")
 _validator_module = _load_module("src.data._validator", "03_validator.py")
-_pipeline_module = _load_module("src.data._pipeline", "04_pipeline.py")
-
-Downloader = _downloader_module.Downloader
-DownloadError = _downloader_module.DownloadError
-
-Extractor = _extractor_module.Extractor
-ExtractError = _extractor_module.ExtractionError
 
 Validator = _validator_module.Validator
 ValidationError = _validator_module.ValidationError
 
-DataPipeline = _pipeline_module.DataPipeline
-
-__all__ = [
-    "Downloader",
-    "DownloadError",
-    "Extractor",
-    "ExtractError",
-    "Validator",
-    "ValidationError",
-    "DataPipeline",
-]
+__all__ = ["Validator", "ValidationError"]

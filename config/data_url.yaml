@@ -5,10 +5,12 @@ github:
   branch: main
 
 
-# Data URL configuration
+# Dataset URLs for Telco Customer Churn Project
+# Replace the placeholder URL with the actual zip download link.
+
 datasets:
-  heart_diseases:
-    zip_file: WA_Fn-UseC_-Telco-Customer-Churn.zip
+  telco_churn: "https://github.com/RICHARD-OBENG/datasets/raw/main/WA_Fn-UseC_-Telco-Customer-Churn.zip"
+  # Add additional datasets as needed
 
 
 # Data download configuration

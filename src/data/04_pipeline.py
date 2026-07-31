@@ -9,14 +9,30 @@ Coordinates:
 Author: Richard Obeng
 """
 
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import logging
 
-from src.data.downloader import Downloader
-from src.data.extractor import Extractor
-from src.data.validator import Validator
-from ...config import config
 
+def _load_module(module_name: str, file_name: str):
+    module_path = Path(__file__).resolve().with_name(file_name)
+    spec = spec_from_file_location(module_name, module_path)
+
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load module '{module_name}'")
+
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_downloader_module = _load_module("src.data._downloader", "01_downloader.py")
+_extractor_module = _load_module("src.data._extractor", "02_extractor.py")
+_validator_module = _load_module("src.data._validator", "03_validator.py")
+
+Downloader = _downloader_module.Downloader
+Extractor = _extractor_module.Extractor
+Validator = _validator_module.Validator
 
 logger = logging.getLogger(__name__)
 
@@ -192,11 +208,12 @@ class DataPipeline:
 
             if config["validation"]["enabled"]:
 
+                validation_config = config["validation"]
+
                 self.validator.validate(
                     dataset_path=extract_path,
-                    validation_config=config["validation"],
+                    validation_config=validation_config,
                 )
-
 
                 logger.info(
                     "Dataset validation successful"

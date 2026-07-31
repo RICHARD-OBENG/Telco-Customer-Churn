@@ -35,6 +35,35 @@ class Validator:
     - CSV validation
     """
 
+    def validate(
+        self,
+        dataset_path: Path,
+        validation_config: Optional[dict] = None,
+    ) -> bool:
+        """
+        Run a dataset validation workflow using the provided config.
+
+        Parameters
+        ----------
+        dataset_path : Path
+            Dataset file or directory to validate.
+
+        validation_config : dict, optional
+            Validation settings.
+
+        Returns
+        -------
+        bool
+        """
+        required_files = None
+
+        if validation_config:
+            required_files = validation_config.get("required_files")
+
+        return self.validate_dataset(
+            dataset_path=dataset_path,
+            required_files=required_files,
+        )
 
     def validate_exists(
         self,
