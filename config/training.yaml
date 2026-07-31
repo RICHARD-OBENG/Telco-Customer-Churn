@@ -1,0 +1,343 @@
+# =============================================================================
+# Telco Customer Churn Prediction — Training Configuration
+# =============================================================================
+# This file centralizes training runtime settings for the Telco churn model.
+# It is designed to be scalable, reproducible, and easy to override per
+# environment or experiment. Values here are consumed by the training script.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. General Training Settings
+# -----------------------------------------------------------------------------
+training:
+  # Human-readable name for this training run.
+  run_name: "telco_churn_baseline"
+
+  # Optional description for the experiment run.
+  description: "Baseline training run for the Telco Customer Churn classifier."
+
+  # Reproducibility seed. Fixed across numpy, pandas, scikit-learn, XGBoost,
+  # LightGBM, and CatBoost to ensure deterministic results.
+  random_seed: 42
+
+  # Number of parallel jobs. -1 uses all available CPU cores.
+  n_jobs: -1
+
+  # Whether to enforce deterministic behavior at the cost of performance.
+  # Recommended: true for experiments and CI, false for production speed.
+  deterministic: true
+
+# -----------------------------------------------------------------------------
+# 2. Batch and Epoch Settings
+# -----------------------------------------------------------------------------
+# Note: This project uses classical supervised learning (tree/linear models),
+# so epochs and batch size are not used by default. These fields are retained
+# for compatibility with neural-network experiments or future extensions.
+# -----------------------------------------------------------------------------
+iterations:
+  # Number of training epochs (only applicable for neural-network models).
+  epochs: null
+
+  # Batch size for mini-batch training (only applicable for neural-network models).
+  batch_size: null
+
+  # Number of boosting rounds for gradient boosting models.
+  # If null, each algorithm uses its own default or early stopping.
+  boosting_rounds: null
+
+# -----------------------------------------------------------------------------
+# 3. Cross-Validation
+# -----------------------------------------------------------------------------
+cross_validation:
+  # Strategy for cross-validation.
+  # Options: kfold, stratified_kfold, stratified_shuffle_split, timeseries.
+  method: "stratified_kfold"
+
+  # Number of folds.
+  n_splits: 5
+
+  # Whether to shuffle before splitting.
+  shuffle: true
+
+  # Random seed for reproducibility.
+  random_state: 42
+
+  # Whether to return out-of-fold predictions for stacking or analysis.
+  return_oof_predictions: true
+
+# -----------------------------------------------------------------------------
+# 4. Data Splitting
+# -----------------------------------------------------------------------------
+data_split:
+  # Train / validation / test proportions. Must sum to 1.0.
+  ratios:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+
+  # Whether to shuffle before splitting.
+  shuffle: true
+
+  # Random seed for reproducibility.
+  random_state: 42
+
+  # Column to stratify on. Preserves class distribution across splits.
+  stratify_column: "Churn"
+
+# -----------------------------------------------------------------------------
+# 5. Hyperparameter Tuning
+# -----------------------------------------------------------------------------
+hyperparameter_tuning:
+  # Whether to run hyperparameter search.
+  enabled: true
+
+  # Search algorithm.
+  # Options: grid, random, optuna, bayesian.
+  method: "optuna"
+
+  # Number of search trials.
+  n_trials: 100
+
+  # Maximum search time in seconds. Null means no time limit.
+  timeout_seconds: 3600
+
+  # Number of parallel workers for hyperparameter search.
+  n_jobs: -1
+
+  # Direction of optimization: minimize or maximize.
+  direction: "maximize"
+
+  # Metric to optimize.
+  objective_metric: "auc_roc"
+
+  # Constraints on the objective.
+  constraints:
+    min_recall: 0.60
+    min_precision: 0.65
+
+  # Pruning configuration for Optuna.
+  pruning:
+    enabled: true
+    n_warmup_steps: 10
+
+  # Sampler configuration.
+  sampler:
+    type: "TPESampler"          # Options: TPESampler, RandomSampler, CmaEsSampler
+    seed: 42
+
+  # Storage backend for Optuna studies.
+  storage:
+    type: "sqlite"              # Options: sqlite, postgresql, mysql, redis
+    url: "sqlite:///optuna_studies.db"
+
+  # Name of the Optuna study.
+  study_name: "telco_churn_optimization"
+
+# -----------------------------------------------------------------------------
+# 6. Early Stopping
+# -----------------------------------------------------------------------------
+early_stopping:
+  # Whether to use early stopping for applicable algorithms.
+  enabled: true
+
+  # Metric monitored for early stopping.
+  monitor: "validation_auc_roc"
+
+  # Minimum change to qualify as an improvement.
+  min_delta: 0.001
+
+  # Number of rounds/epochs with no improvement before stopping.
+  patience: 50
+
+  # Whether to restore the best weights/iterations after stopping.
+  restore_best: true
+
+  # Frequency of evaluation.
+  eval_every: 1
+
+# -----------------------------------------------------------------------------
+# 7. Optimization Settings
+# -----------------------------------------------------------------------------
+optimization:
+  # Primary metric for model selection and optimization.
+  primary_metric: "auc_roc"
+
+  # Secondary metrics used for tie-breaking or reporting.
+  secondary_metrics:
+    - "f1"
+    - "precision"
+    - "recall"
+    - "brier_score"
+
+  # Class imbalance handling.
+  class_imbalance:
+    # Options: class_weight, smote, adasyn, threshold_tuning, none.
+    strategy: "class_weight"
+
+    # Threshold tuning on validation set.
+    threshold_tuning:
+      enabled: true
+      target_metric: "f1"
+      min_recall: 0.60
+      min_precision: 0.65
+
+  # Optimization direction for each metric.
+  metric_directions:
+    accuracy: "maximize"
+    precision: "maximize"
+    recall: "maximize"
+    f1: "maximize"
+    auc_roc: "maximize"
+    brier_score: "minimize"
+    log_loss: "minimize"
+
+# -----------------------------------------------------------------------------
+# 8. Checkpoint Settings
+# -----------------------------------------------------------------------------
+checkpoints:
+  # Whether to save training checkpoints.
+  enabled: true
+
+  # Directory for checkpoint artifacts.
+  dir: "checkpoints"
+
+  # Frequency of checkpoint saving.
+  # Options: epoch, step, best, none.
+  save_frequency: "best"
+
+  # Metric used to determine the best checkpoint.
+  monitor: "validation_auc_roc"
+
+  # Mode for selecting best checkpoint: max or min.
+  mode: "max"
+
+  # Maximum number of checkpoints to retain. Older checkpoints are removed.
+  max_checkpoints: 3
+
+  # Whether to save the final model after training completes.
+  save_final: true
+
+  # Whether to compress checkpoint files.
+  compress: false
+
+# -----------------------------------------------------------------------------
+# 9. Experiment Tracking
+# -----------------------------------------------------------------------------
+experiment_tracking:
+  # Tracking backend.
+  # Options: mlflow, tensorboard, wandb, none.
+  backend: "mlflow"
+
+  # Experiment name.
+  experiment_name: "telco_customer_churn"
+
+  # Run name. If null, a timestamped name is generated.
+  run_name: null
+
+  # MLflow tracking URI. Override via MLFLOW_TRACKING_URI env variable.
+  tracking_uri: "http://localhost:5000"
+
+  # Registered model name in the model registry.
+  registered_model_name: "telco_churn_classifier"
+
+  # What to log after each run.
+  logging:
+    metrics: true
+    parameters: true
+    artifacts: true
+    model: true
+    preprocessor: true
+    dataset_versions: true
+    feature_importance: true
+    shap_summary: true
+    confusion_matrix: true
+    roc_curve: true
+    calibration_curve: true
+
+  # Tags attached to each run.
+  tags:
+    project: "Telco Customer Churn Prediction"
+    version: "1.0.0"
+    environment: "development"
+    task: "binary_classification"
+
+# -----------------------------------------------------------------------------
+# 10. Logging
+# -----------------------------------------------------------------------------
+logging:
+  # Logging level.
+  level: "INFO"
+
+  # Log format: text or json.
+  format: "json"
+
+  # Whether to write logs to file.
+  log_to_file: true
+
+  # Log file path.
+  log_file: "logs/training.log"
+
+  # Log rotation settings.
+  rotation:
+    max_bytes: 10485760           # 10 MB
+    backup_count: 5
+
+# -----------------------------------------------------------------------------
+# 11. Environment-Specific Overrides
+# -----------------------------------------------------------------------------
+# These sections override base settings based on the active environment.
+# -----------------------------------------------------------------------------
+development:
+  training:
+    deterministic: false
+  hyperparameter_tuning:
+    enabled: false
+    n_trials: 10
+  logging:
+    level: "DEBUG"
+    format: "text"
+  checkpoints:
+    enabled: false
+
+testing:
+  training:
+    deterministic: true
+  cross_validation:
+    n_splits: 3
+  hyperparameter_tuning:
+    enabled: false
+  data_split:
+    ratios:
+      train: 0.60
+      validation: 0.20
+      test: 0.20
+  logging:
+    level: "INFO"
+    format: "text"
+
+staging:
+  experiment_tracking:
+    tags:
+      environment: "staging"
+  hyperparameter_tuning:
+    n_trials: 50
+  logging:
+    format: "json"
+
+production:
+  training:
+    deterministic: false
+    n_jobs: -1
+  hyperparameter_tuning:
+    n_trials: 200
+    timeout_seconds: 7200
+  experiment_tracking:
+    tags:
+      environment: "production"
+  logging:
+    level: "INFO"
+    format: "json"
+    log_to_file: true
+  checkpoints:
+    enabled: true
+    save_frequency: "best"
