@@ -1,0 +1,11 @@
+{
+    "engineered_features": [
+        "total_services",
+        "has_security_service",
+        "has_streaming_service",
+        "is_month_to_month",
+        "is_long_term_contract",
+        "is_electronic_payment",
+        "tenure_group"
+    ]
+}
