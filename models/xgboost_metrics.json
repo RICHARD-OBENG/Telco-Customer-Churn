@@ -1,0 +1,26 @@
+{
+  "model_name": "xgboost",
+  "validation_metrics": {
+    "accuracy": 0.6553030303030303,
+    "precision": 0.42857142857142855,
+    "recall": 0.9,
+    "f1": 0.5806451612903226,
+    "roc_auc": 0.7920011045655376
+  },
+  "test_metrics": {
+    "accuracy": 0.6537369914853358,
+    "precision": 0.42451154529307283,
+    "recall": 0.8505338078291815,
+    "f1": 0.566350710900474,
+    "roc_auc": 0.7843398026195106
+  },
+  "feature_importances": {
+    "categorical__is_month_to_month": 0.4922080934047699,
+    "categorical__is_long_term_contract": 0.26561617851257324,
+    "categorical__is_electronic_payment": 0.09412342309951782,
+    "categorical__has_streaming_service": 0.062316715717315674,
+    "categorical__has_security_service": 0.05087469145655632,
+    "categorical__total_services": 0.03486085310578346,
+    "categorical__tenure_group": 0.0
+  }
+}

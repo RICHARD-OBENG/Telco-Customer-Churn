@@ -1,0 +1,26 @@
+{
+  "model_name": "random_forest",
+  "validation_metrics": {
+    "accuracy": 0.6553030303030303,
+    "precision": 0.42857142857142855,
+    "recall": 0.9,
+    "f1": 0.5806451612903226,
+    "roc_auc": 0.7918262150220913
+  },
+  "test_metrics": {
+    "accuracy": 0.6527909176915799,
+    "precision": 0.4237588652482269,
+    "recall": 0.8505338078291815,
+    "f1": 0.565680473372781,
+    "roc_auc": 0.7822485966907583
+  },
+  "feature_importances": {
+    "categorical__is_long_term_contract": 0.3416095663404009,
+    "categorical__is_month_to_month": 0.3142890229325442,
+    "categorical__is_electronic_payment": 0.1648129939997759,
+    "categorical__total_services": 0.10156850693536988,
+    "categorical__has_streaming_service": 0.04549330548548956,
+    "categorical__has_security_service": 0.03222660430641949,
+    "categorical__tenure_group": 0.0
+  }
+}
