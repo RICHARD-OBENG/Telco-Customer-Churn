@@ -1,0 +1,64 @@
+# =========================
+# Environment & secrets
+# =========================
+# venv/
+env/
+telco.venv/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+
+# =========================
+# Data
+# =========================
+data/raw/
+data/interim/
+data/processed/
+
+# =========================
+# CatBoost
+**/catboost_info/
+
+
+# =========================
+# Trained ML models and artifacts
+# =========================
+models/*.joblib
+models/*.pkl
+models/*.pickle
+models/*.cbm
+models/*.h5
+models/*.pt
+models/*.pth
+
+# Generated model reports/metrics
+models/*_metrics.json
+models/*_report.json
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
